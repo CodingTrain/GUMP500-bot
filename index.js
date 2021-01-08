@@ -34,13 +34,31 @@ const parameters = {
 async function newTweet(data) {
   // console.log(data);
   const regex = /(\d+)\s*miles/i;
-  const { user, text } = data;
+  const { created_at, user, text } = data;
   const name = user.screen_name;
   console.log(`${name}: ${text}`);
   let match = text.match(regex);
+ 
   if (match) {
-    let miles = parseInt(match[1]);
-    database.people[name] = miles;
+    const miles = parseInt(match[1]);
+    const currentUser = database.people[name];
+    
+    if (currentUser) {
+      currentUser.history = {
+        ...currentUser.history,
+        [created_at]: miles,
+      };
+      currentUser.total += miles;
+    } else {
+      const schema = {
+        history: {
+          [created_at]: miles,
+        },
+        total: miles,
+      };
+      database.people[name] = schema;
+    }
+    //database.people[name] = miles;
     fs.writeFileSync("miles.json", JSON.stringify(database, null, 2));
   }
 }
