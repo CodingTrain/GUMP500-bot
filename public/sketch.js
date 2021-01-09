@@ -8,8 +8,8 @@ async function visualize() {
   const { people } = await response.json();
   console.log(people);
   const names = Object.keys(people);
-  names.sort((a, b) => people[b] - people[a]);
+  names.sort((a, b) => people[b].total - people[a].total);
   for (let name of names) {
-    createDiv(`${name} ran ${people[name]} miles.`);
+    createDiv(`${name} ran a total of ${people[name].total} miles.`);
   }
 }
