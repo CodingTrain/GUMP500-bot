@@ -2,12 +2,61 @@ const express = require("express");
 const Twitter = require("twitter-lite");
 const dotenv = require("dotenv");
 const fs = require("fs");
+dotenv.config();
 
-const exists = fs.existsSync("miles.json");
-let database = { people: {} };
-if (exists) {
-  const data = fs.readFileSync("miles.json", "utf-8");
-  database = JSON.parse(data);
+const username = process.env.MONGO_USER;
+const password = process.env.MONGO_PASSWORD;
+const { MongoClient } = require("mongodb");
+const uri = `mongodb+srv://${username}:${password}@cluster0.zraeh.mongodb.net/gump500?retryWrites=true&w=majority`;
+const mongoClient = new MongoClient(uri);
+let runnersDB;
+
+connectDB().catch(console.error);
+
+async function connectDB() {
+  try {
+    // Connect to the MongoDB cluster
+    await mongoClient.connect();
+    // Make the appropriate DB calls
+    databasesList = await mongoClient.db().admin().listDatabases();
+    databasesList.databases.forEach((db) => console.log(` - ${db.name}`));
+    runnersDB = mongoClient.db("GUMP500").collection("people");
+    const all = await getRunners();
+    console.log(all.length);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    // await mongoClient.close();
+  }
+}
+
+async function getRunners() {
+  // await mongoClient.connect();
+  // runnersDB = mongoClient.db("GUMP500").collection("people");
+  const cursor = runnersDB.find();
+  const all = await cursor.toArray();
+  return all;
+}
+
+async function updateDatabase(name, created_at, miles) {
+  const found = await runnersDB.findOne({ name });
+  if (found) {
+    console.log(found);
+    found.history.push({ created_at, miles });
+    found.total += miles;
+    const updated = await runnersDB.updateOne({ name }, { $set: found });
+    console.log(`${updated.matchedCount} document(s) matched the query criteria.`);
+    console.log(`${updated.modifiedCount} document(s) was/were updated.`);
+  } else {
+    console.log(`New runner '${name}'`);
+    const newRunner = {
+      name,
+      history: [{ created_at, miles }],
+      total: miles,
+    };
+    const added = await runnersDB.insertOne(newRunner);
+    console.log(`New runner created with the following id: ${added.insertedId}`);
+  }
 }
 
 const app = express();
@@ -15,10 +64,17 @@ app.listen(3000, () => console.log("listening at 3000"));
 app.use(express.static("public"));
 app.use(express.json({ limit: "1mb" }));
 
-dotenv.config();
+app.get("/api", async (request, response) => {
+  // const cursor = runnersDB.find();
+  // const all = await cursor.toArray();
+  const all = await getRunners();
+  console.log(all);
+  response.json(all);
+});
+
 console.log("hello search! 🤖");
 
-const client = new Twitter({
+const twitter = new Twitter({
   subdomain: "api", // "api" is the default (change for other subdomains)
   version: "1.1", // version "1.1" is the default (change for other subdomains)
   consumer_key: process.env.TWITTER_CONSUMER_KEY, // from Twitter.
@@ -41,29 +97,11 @@ async function newTweet(data) {
 
   if (match) {
     const miles = parseFloat(match[1]);
-    const currentUser = database.people[name];
-
-    if (currentUser) {
-      currentUser.history = {
-        ...currentUser.history,
-        [created_at]: miles,
-      };
-      currentUser.total += miles;
-    } else {
-      const schema = {
-        history: {
-          [created_at]: miles,
-        },
-        total: miles,
-      };
-      database.people[name] = schema;
-    }
-    //database.people[name] = miles;
-    fs.writeFileSync("miles.json", JSON.stringify(database, null, 2));
+    await updateDatabase(name, created_at, miles);
   }
 }
 
-const stream = client
+const stream = twitter
   .stream("statuses/filter", parameters)
   .on("start", (response) => console.log("start"))
   .on("data", newTweet)
@@ -71,13 +109,9 @@ const stream = client
   .on("error", (error) => console.log("error", error))
   .on("end", (response) => console.log("end"));
 
-// client
+// twitter
 //   .get("account/verify_credentials")
 //   .then((results) => {
 //     console.log("results", results);
 //   })
 //   .catch(console.error);
-
-app.get("/api", (request, response) => {
-  response.json(database);
-});

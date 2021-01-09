@@ -5,11 +5,10 @@ function setup() {
 
 async function visualize() {
   const response = await fetch("/api");
-  const { people } = await response.json();
-  console.log(people);
-  const names = Object.keys(people);
-  names.sort((a, b) => people[b].total - people[a].total);
-  for (let name of names) {
-    createDiv(`${name} ran a total of ${people[name].total} miles.`);
+  const runners = await response.json();
+  console.log(runners);
+  runners.sort((a, b) => a.total - b.total);
+  for (let runner of runners) {
+    createDiv(`${runner.name} ran a total of ${runner.total} miles.`);
   }
 }
