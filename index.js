@@ -21,10 +21,10 @@ console.log("hello search! 🤖");
 const client = new Twitter({
   subdomain: "api", // "api" is the default (change for other subdomains)
   version: "1.1", // version "1.1" is the default (change for other subdomains)
-  consumer_key: process.env.CONSUMER_KEY, // from Twitter.
-  consumer_secret: process.env.CONSUMER_SECRET, // from Twitter.
-  access_token_key: process.env.TOKEN, // from your User (oauth_token)
-  access_token_secret: process.env.TOKEN_SECRET, // from your User (oauth_token_secret)
+  consumer_key: process.env.TWITTER_CONSUMER_KEY, // from Twitter.
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET, // from Twitter.
+  access_token_key: process.env.TWITTER_ACCESS_TOKEN, // from your User (oauth_token)
+  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET, // from your User (oauth_token_secret)
 });
 
 const parameters = {
@@ -33,16 +33,16 @@ const parameters = {
 
 async function newTweet(data) {
   // console.log(data);
-  const regex = /(\d+)\s*miles/i;
+  const regex = /(\d+\.?\d*)\s*miles?/i;
   const { created_at, user, text } = data;
   const name = user.screen_name;
   console.log(`${name}: ${text}`);
   let match = text.match(regex);
- 
+
   if (match) {
-    const miles = parseInt(match[1]);
+    const miles = parseFloat(match[1]);
     const currentUser = database.people[name];
-    
+
     if (currentUser) {
       currentUser.history = {
         ...currentUser.history,
