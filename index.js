@@ -2,6 +2,7 @@ const express = require("express");
 const Twitter = require("twitter-lite");
 const dotenv = require("dotenv");
 const fs = require("fs");
+const metric = require("./helpers/metric");
 dotenv.config();
 
 const username = process.env.MONGO_USER;
@@ -89,14 +90,20 @@ const parameters = {
 
 async function newTweet(data) {
   // console.log(data);
-  const regex = /(\d+\.?\d*)\s*miles?/i;
+  const regex = /(\d+\.?\d*)\s*(kilometer[s]?|km|mi(le[s]?)?)/i;
   const { created_at, user, text } = data;
   const name = user.screen_name;
   console.log(`${name}: ${text}`);
   let match = text.match(regex);
 
   if (match) {
-    const miles = parseFloat(match[1]);
+    let miles = parseFloat(match[1]);
+    //Check if kilometers were passed and convert to miles
+    if (['km','kilometer','kilometers'].indexOf(match[2]) != -1) {
+      miles = metric.kmToMiles(miles);
+    }
+    //Round to 2 digits after the comma
+    miles = Math.round((miles + Number.EPSILON) * 100) / 100;
     await updateDatabase(name, created_at, miles);
   }
 }
