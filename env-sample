@@ -1,7 +1,6 @@
+MONGO_CONNECTION_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
+
 TWITTER_CONSUMER_KEY=1234
 TWITTER_CONSUMER_SECRET=1234
 TWITTER_ACCESS_TOKEN=1234
 TWITTER_ACCESS_TOKEN_SECRET=1234
-
-MONGO_USER=username
-MONGO_PASSWORD=password
