@@ -3,13 +3,11 @@ const Twitter = require("twitter-lite");
 const dotenv = require("dotenv");
 const fs = require("fs");
 const metric = require("./helpers/metric");
+const { MongoClient } = require("mongodb");
+
 dotenv.config();
 
-const username = process.env.MONGO_USER;
-const password = process.env.MONGO_PASSWORD;
-const { MongoClient } = require("mongodb");
-const uri = `mongodb+srv://${username}:${password}@cluster0.zraeh.mongodb.net/gump500?retryWrites=true&w=majority`;
-const mongoClient = new MongoClient(uri);
+const mongoClient = new MongoClient(process.env.MONGO_CONNECTION_URI);
 let runnersDB;
 
 connectDB().catch(console.error);
