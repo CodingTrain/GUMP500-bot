@@ -5,6 +5,7 @@ const fs = require("fs");
 const metric = require("./helpers/metric");
 const { MongoClient } = require("mongodb");
 
+// Get environment variables from .env for Twitter/MongoDB creds
 dotenv.config();
 
 const mongoClient = new MongoClient(process.env.MONGO_CONNECTION_URI);
@@ -21,14 +22,15 @@ async function connectDB() {
     databasesList.databases.forEach((db) => console.log(` - ${db.name}`));
     runnersDB = mongoClient.db("GUMP500").collection("people");
     const all = await getRunners();
-    console.log(all.length);
+    console.log(`There are ${all.length} database entries`);
   } catch (e) {
-    console.error(e);
+    console.error(`MongoDB connection error: ${e}`);
   } finally {
     // await mongoClient.close();
   }
 }
 
+// Return all runners from datbase as an array
 async function getRunners() {
   // await mongoClient.connect();
   // runnersDB = mongoClient.db("GUMP500").collection("people");
@@ -37,32 +39,43 @@ async function getRunners() {
   return all;
 }
 
+// Add runner to database and add their distance or
+// update an existing runner's distance
 async function updateDatabase(name, created_at, miles) {
+  // Check if runner is already in database (has previously submitted distance)
   const found = await runnersDB.findOne({ name });
   if (found) {
-    console.log(found);
+    console.log(`Existing runner ${found}`);
+    // Store new run information in runner's database entry history
     found.history.push({ created_at, miles });
+    // Update runner's total miles ran
     found.total += miles;
+    // Update database with new data
     const updated = await runnersDB.updateOne({ name }, { $set: found });
     console.log(`${updated.matchedCount} document(s) matched the query criteria.`);
     console.log(`${updated.modifiedCount} document(s) was/were updated.`);
   } else {
     console.log(`New runner '${name}'`);
+    // Create data structure for the new runner with their display name
+    // and distance ran, and update history database entry accordingly
     const newRunner = {
       name,
       history: [{ created_at, miles }],
       total: miles,
     };
+    // Insert new entry into database
     const added = await runnersDB.insertOne(newRunner);
     console.log(`New runner created with the following id: ${added.insertedId}`);
   }
 }
 
+// Create Express web application at port 3000
 const app = express();
 app.listen(3000, () => console.log("listening at 3000"));
 app.use(express.static("public"));
 app.use(express.json({ limit: "1mb" }));
 
+// Return all runners as json on /api web request
 app.get("/api", async (request, response) => {
   // const cursor = runnersDB.find();
   // const all = await cursor.toArray();
@@ -73,6 +86,8 @@ app.get("/api", async (request, response) => {
 
 console.log("hello search! 🤖");
 
+// Twitter creds and settings (generally doesn't need to be touched)
+// as creds are set in .env file (see env-sample)
 const twitter = new Twitter({
   subdomain: "api", // "api" is the default (change for other subdomains)
   version: "1.1", // version "1.1" is the default (change for other subdomains)
@@ -88,10 +103,11 @@ const parameters = {
 
 async function newTweet(data) {
   // console.log(data);
+  // Ensure that tweet contains distance information (i.e. km, mile, mi, etc)
   const regex = /(\d+\.?\d*)\s*(kilometer[s]?|km|mi(le[s]?)?)/i;
   const { created_at, user, text } = data;
   const name = user.screen_name;
-  console.log(`${name}: ${text}`);
+  console.log(`New Tweet from ${name}: ${text}`);
   let match = text.match(regex);
 
   if (match) {
@@ -106,9 +122,10 @@ async function newTweet(data) {
   }
 }
 
+// Listen for new tweets that contain the #GUMP500 keyword and run newTweet()
 const stream = twitter
   .stream("statuses/filter", parameters)
-  .on("start", (response) => console.log("start"))
+  .on("start", (response) => console.log("Twitter data stram started"))
   .on("data", newTweet)
   .on("ping", () => console.log("ping"))
   .on("error", (error) => console.log("error", error))
