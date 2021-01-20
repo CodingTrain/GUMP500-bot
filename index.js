@@ -149,7 +149,7 @@ const config = {
 };
 
 // For testing in this repo
-const ChooChooTweets = require("/Users/shiffman/Repos/codingtrain/ChooChooTweets");
+const ChooChooTweets = require("./choochoo");
 const a2zitp = new ChooChooTweets(config);
 
 start();
