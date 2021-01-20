@@ -6,9 +6,8 @@ const http = require("http");
 
 const PORT = process.env.PORT || 4242;
 
-const startServer = (app, auth, tweetHandler) =>
-  // Return all runners as json on /api web request
-  app.get("/webhook", async (req, res) => {
+const startServer = (port, auth, tweetHandler, app) => {
+  const handleHook = (req, res) => {
     const route = url.parse(req.url, true);
     if (!route.pathname) {
       return;
@@ -52,7 +51,15 @@ const startServer = (app, auth, tweetHandler) =>
         res.end();
       });
     }
-  });
+  };
+  if (app) {
+    console.log("existing server");
+    app.get("/webhook", handleHook);
+  } else {
+    console.log("creating server");
+    http.createServer(handleHook).listen(port);
+  }
+};
 
 const OAuth = require("oauth");
 
@@ -62,7 +69,7 @@ class ChooChooTweets {
     this.oauth = new OAuth.OAuth("https://api.twitter.com/oauth/request_token", "https://api.twitter.com/oauth/access_token", this.config.consumer_key, this.config.consumer_secret, "1.0A", null, "HMAC-SHA1");
   }
 
-  async initActivity(tweetHandler, app, webhookURL) {
+  async initActivity(tweetHandler, webhookURL, app) {
     try {
       if (!webhookURL) {
         const NGROK_AUTH_TOKEN = this.config.ngrok;
@@ -72,7 +79,7 @@ class ChooChooTweets {
         const url = await ngrok.connect(PORT);
         webhookURL = `${url}/standalone-server/webhook`;
       }
-      const server = startServer(app, this.config, tweetHandler);
+      const server = startServer(PORT, this.config, tweetHandler, app);
       const webhook = new Autohook(this.config);
       await webhook.removeWebhooks();
 
