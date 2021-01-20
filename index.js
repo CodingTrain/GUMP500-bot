@@ -113,12 +113,13 @@ async function newTweet(data) {
   if (match) {
     let miles = parseFloat(match[1]);
     //Check if kilometers were passed and convert to miles
-    if (['km','kilometer','kilometers'].indexOf(match[2]) != -1) {
+    if (["km", "kilometer", "kilometers"].indexOf(match[2]) != -1) {
       miles = metric.kmToMiles(miles);
     }
     //Round to 2 digits after the comma
     miles = Math.round((miles + Number.EPSILON) * 100) / 100;
     await updateDatabase(name, created_at, miles);
+    return { name, created_at, miles };
   }
 }
 
@@ -137,3 +138,35 @@ const stream = twitter
 //     console.log("results", results);
 //   })
 //   .catch(console.error);
+
+const config = {
+  consumer_key: process.env.TWITTER_CONSUMER_KEY,
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+  token: process.env.TWITTER_ACCESS_TOKEN,
+  token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+  env: process.env.TWITTER_WEBHOOK_ENV,
+  ngrok: process.env.NGROK_AUTH_TOKEN,
+};
+
+// For testing in this repo
+const ChooChooTweets = require("/Users/shiffman/Repos/codingtrain/ChooChooTweets");
+const a2zitp = new ChooChooTweets(config);
+
+start();
+async function start() {
+  console.log("listening");
+  await a2zitp.initActivity(tweetHandler);
+}
+
+async function tweetHandler(for_user_id, tweet) {
+  const { user, id_str } = tweet;
+  if (user.id_str !== for_user_id) {
+    const results = await newTweet(tweet);
+    if (results) {
+      console.log(results);
+      await a2zitp.reply(id_str, `Great job! your run of ${results.miles} miles has been logged!`);
+    } else {
+      await a2zitp.reply(id_str, `So sorry, I was not able to log any miles!`);
+    }
+  }
+}
