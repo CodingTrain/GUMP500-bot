@@ -6,17 +6,37 @@ const http = require("http");
 
 const PORT = process.env.PORT || 4242;
 
-const startServer = (port, auth, tweetHandler) =>
-  http
-    .createServer((req, res) => {
-      const route = url.parse(req.url, true);
-      if (!route.pathname) {
-        return;
+const startServer = (app, auth, tweetHandler) =>
+  // Return all runners as json on /api web request
+  app.get("/webhook", async (req, res) => {
+    const route = url.parse(req.url, true);
+    if (!route.pathname) {
+      return;
+    }
+
+    if (route.query.crc_token) {
+      try {
+        if (!validateSignature(req.headers, auth, url.parse(req.url).query)) {
+          console.error("Cannot validate webhook signature");
+          return;
+        }
+      } catch (e) {
+        console.error(e);
       }
 
-      if (route.query.crc_token) {
+      const crc = validateWebhook(route.query.crc_token, auth, res);
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify(crc));
+    }
+
+    if (req.method === "POST" && req.headers["content-type"] === "application/json") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
         try {
-          if (!validateSignature(req.headers, auth, url.parse(req.url).query)) {
+          if (!validateSignature(req.headers, auth, body)) {
             console.error("Cannot validate webhook signature");
             return;
           }
@@ -24,36 +44,15 @@ const startServer = (port, auth, tweetHandler) =>
           console.error(e);
         }
 
-        const crc = validateWebhook(route.query.crc_token, auth, res);
-        res.writeHead(200, { "content-type": "application/json" });
-        res.end(JSON.stringify(crc));
-      }
-
-      if (req.method === "POST" && req.headers["content-type"] === "application/json") {
-        let body = "";
-        req.on("data", (chunk) => {
-          body += chunk.toString();
-        });
-        req.on("end", () => {
-          try {
-            if (!validateSignature(req.headers, auth, body)) {
-              console.error("Cannot validate webhook signature");
-              return;
-            }
-          } catch (e) {
-            console.error(e);
-          }
-
-          let json = JSON.parse(body);
-          if (json.tweet_create_events) {
-            tweetHandler(json.for_user_id, json.tweet_create_events[0]);
-          }
-          res.writeHead(200);
-          res.end();
-        });
-      }
-    })
-    .listen(port);
+        let json = JSON.parse(body);
+        if (json.tweet_create_events) {
+          tweetHandler(json.for_user_id, json.tweet_create_events[0]);
+        }
+        res.writeHead(200);
+        res.end();
+      });
+    }
+  });
 
 const OAuth = require("oauth");
 
@@ -63,7 +62,7 @@ class ChooChooTweets {
     this.oauth = new OAuth.OAuth("https://api.twitter.com/oauth/request_token", "https://api.twitter.com/oauth/access_token", this.config.consumer_key, this.config.consumer_secret, "1.0A", null, "HMAC-SHA1");
   }
 
-  async initActivity(tweetHandler, webhookURL) {
+  async initActivity(tweetHandler, app, webhookURL) {
     try {
       if (!webhookURL) {
         const NGROK_AUTH_TOKEN = this.config.ngrok;
@@ -73,7 +72,7 @@ class ChooChooTweets {
         const url = await ngrok.connect(PORT);
         webhookURL = `${url}/standalone-server/webhook`;
       }
-      const server = startServer(PORT, this.config, tweetHandler);
+      const server = startServer(app, this.config, tweetHandler);
       const webhook = new Autohook(this.config);
       await webhook.removeWebhooks();
 
