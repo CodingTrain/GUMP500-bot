@@ -159,7 +159,7 @@ async function start() {
   if (process.env.PROJECT_DOMAIN) {
     webhookURL = `https://${process.env.PROJECT_DOMAIN}.glitch.me/webhook`;
   }
-  await a2zitp.initActivity(tweetHandler, webhookURL);
+  await a2zitp.initActivity(tweetHandler, app, webhookURL);
 }
 
 async function tweetHandler(for_user_id, tweet) {
