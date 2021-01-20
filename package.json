@@ -10,9 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "choochootweets": "0.0.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "mongodb": "^3.6.3",
+    "ngrok": "^3.4.0",
     "twitter-lite": "^0.14.0"
   }
 }
