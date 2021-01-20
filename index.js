@@ -162,7 +162,11 @@ async function tweetHandler(for_user_id, tweet) {
   const { user, id_str } = tweet;
   if (user.id_str !== for_user_id) {
     const results = await newTweet(tweet);
-    console.log(results);
-    await a2zitp.reply(id_str, `Great job! your run of ${results.miles} miles has been logged!`);
+    if (results) {
+      console.log(results);
+      await a2zitp.reply(id_str, `Great job! your run of ${results.miles} miles has been logged!`);
+    } else {
+      await a2zitp.reply(id_str, `So sorry, I was not able to log any miles!`);
+    }
   }
 }
