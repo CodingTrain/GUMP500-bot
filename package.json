@@ -14,6 +14,8 @@
     "express": "^4.17.1",
     "mongodb": "^3.6.3",
     "ngrok": "^3.4.0",
+    "oauth": "^0.9.15",
+    "twitter-autohook": "^1.7.2",
     "twitter-lite": "^0.14.0"
   }
 }

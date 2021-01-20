@@ -155,7 +155,11 @@ const a2zitp = new ChooChooTweets(config);
 start();
 async function start() {
   console.log("listening");
-  await a2zitp.initActivity(tweetHandler);
+  let webhookURL;
+  if (process.env.PROJECT_DOMAIN) {
+    webhookURL = `https://${process.env.PROJECT_DOMAIN}.glitch.me/webhook`;
+  }
+  await a2zitp.initActivity(tweetHandler, webhookURL);
 }
 
 async function tweetHandler(for_user_id, tweet) {
