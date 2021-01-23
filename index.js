@@ -1,9 +1,9 @@
-const express = require("express");
-const Twitter = require("twitter-lite");
-const dotenv = require("dotenv");
-const fs = require("fs");
-const metric = require("./helpers/metric");
-const { MongoClient } = require("mongodb");
+const express = require('express');
+const Twitter = require('twitter-lite');
+const dotenv = require('dotenv');
+const fs = require('fs');
+const metric = require('./helpers/metric');
+const { MongoClient } = require('mongodb');
 
 // Get environment variables from .env for Twitter/MongoDB creds
 dotenv.config();
@@ -20,7 +20,7 @@ async function connectDB() {
     // Make the appropriate DB calls
     // databasesList = await mongoClient.db().admin().listDatabases();
     // databasesList.databases.forEach((db) => console.log(` - ${db.name}`));
-    runnersDB = mongoClient.db("GUMP500").collection("people");
+    runnersDB = mongoClient.db('GUMP500').collection('people');
     const all = await getRunners();
     console.log(`There are ${all.length} database entries`);
   } catch (e) {
@@ -56,9 +56,7 @@ async function updateDatabase(name, created_at, miles, isTotal) {
     }
     // Update database with new data
     const updated = await runnersDB.updateOne({ name }, { $set: found });
-    console.log(
-      `${updated.matchedCount} document(s) matched the query criteria.`
-    );
+    console.log(`${updated.matchedCount} document(s) matched the query criteria.`);
     console.log(`${updated.modifiedCount} document(s) was/were updated.`);
     return found;
   } else {
@@ -72,20 +70,18 @@ async function updateDatabase(name, created_at, miles, isTotal) {
     };
     // Insert new entry into database
     const added = await runnersDB.insertOne(newRunner);
-    console.log(
-      `New runner created with the following id: ${added.insertedId}`
-    );
+    console.log(`New runner created with the following id: ${added.insertedId}`);
     return newRunner;
   }
 }
 
-console.log("hello twitter! 🤖");
+console.log('hello twitter! 🤖');
 
 // Twitter creds and settings (generally doesn't need to be touched)
 // as creds are set in .env file (see env-sample)
 const twitter = new Twitter({
-  subdomain: "api", // "api" is the default (change for other subdomains)
-  version: "1.1", // version "1.1" is the default (change for other subdomains)
+  subdomain: 'api', // "api" is the default (change for other subdomains)
+  version: '1.1', // version "1.1" is the default (change for other subdomains)
   consumer_key: process.env.TWITTER_CONSUMER_KEY, // from Twitter.
   consumer_secret: process.env.TWITTER_CONSUMER_SECRET, // from Twitter.
   access_token_key: process.env.TWITTER_ACCESS_TOKEN, // from your User (oauth_token)
@@ -93,7 +89,7 @@ const twitter = new Twitter({
 });
 
 const parameters = {
-  track: "#GUMP500",
+  track: '#GUMP500',
 };
 
 async function newTweet(data) {
@@ -108,7 +104,7 @@ async function newTweet(data) {
   if (match) {
     let miles = parseFloat(match[1]);
     //Check if kilometers were passed and convert to miles
-    if (["km", "kilometer", "kilometers"].indexOf(match[2]) != -1) {
+    if (['km', 'kilometer', 'kilometers'].indexOf(match[2]) != -1) {
       miles = metric.kmToMiles(miles);
     }
     //Round to 2 digits after the comma
@@ -123,12 +119,12 @@ async function newTweet(data) {
 
 // Listen for new tweets that contain the #GUMP500 keyword and run newTweet()
 const stream = twitter
-  .stream("statuses/filter", parameters)
-  .on("start", (response) => console.log("Twitter data stram started"))
-  .on("data", newTweet)
+  .stream('statuses/filter', parameters)
+  .on('start', (response) => console.log('Twitter data stram started'))
+  .on('data', newTweet)
   // .on("ping", () => console.log("ping"))
-  .on("error", (error) => console.log("error", error))
-  .on("end", (response) => console.log("end"));
+  .on('error', (error) => console.log('error', error))
+  .on('end', (response) => console.log('end'));
 
 // twitter
 //   .get("account/verify_credentials")
@@ -147,12 +143,12 @@ const config = {
 };
 
 // For testing in this repo
-const ChooChooTweets = require("choochootweets");
+const ChooChooTweets = require('choochootweets');
 const a2zitp = new ChooChooTweets(config);
 
 start();
 async function start() {
-  console.log("listening");
+  console.log('listening');
   let webhookURL;
   if (process.env.PROJECT_DOMAIN) {
     webhookURL = `https://${process.env.PROJECT_DOMAIN}.glitch.me/webhook`;
@@ -161,8 +157,8 @@ async function start() {
 }
 
 async function tweetHandler(for_user_id, tweet) {
-  const { user, id_str } = tweet;
-  if (user.id_str !== for_user_id) {
+  const { user, id_str, text } = tweet;
+  if (user.id_str !== for_user_id && !/^RT\s/.test(text)) {
     const results = await newTweet(tweet);
     if (results) {
       console.log(results);
