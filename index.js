@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const metric = require("./helpers/metric");
 const { MongoClient } = require("mongodb");
+const {getStringProgressBar} = require("./responses");
 
 // Get environment variables from .env for Twitter/MongoDB creds
 dotenv.config();
@@ -170,7 +171,7 @@ async function tweetHandler(for_user_id, tweet) {
       if (results.isTotal) {
         reply_txt = `Wow! I have set your total miles to ${results.miles} miles!`;
       } else {
-        reply_txt = `Great job! Your run of ${results.miles} miles has been logged! Your total is now ${results.updated.total} miles!`;
+        reply_txt = `Great job! Your run of ${results.miles} miles has been logged! Your total is now ${results.updated.total} miles!\n${getStringProgressBar(results.updated.total)}`;
       }
       await a2zitp.reply(id_str, reply_txt);
     } else {
