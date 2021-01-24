@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const fs = require("fs");
 const metric = require("./helpers/metric");
 const { MongoClient } = require("mongodb");
-const {getStringProgressBar} = require("./responses");
+const { getStringProgressBar } = require("./responses");
 
 // Get environment variables from .env for Twitter/MongoDB creds
 dotenv.config();
