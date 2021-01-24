@@ -11,9 +11,9 @@ function getStringProgressBar(totalMiles) {
   const half = '◐';
   const whole = '●';
   const empty = '○';
-  const numHalves = (perctToNearestFive % 10) / 5;
-  const numWholes = (perctToNearestFive - numHalves) / 10;
-  const numEmpty = 10 - numWholes + numHalves;
+  const numHalves = Math.floor((perctToNearestFive % 10) / 5);
+  const numWholes = Math.floor((perctToNearestFive - numHalves) / 10);
+  const numEmpty = 10 - (numWholes + numHalves);
   return `${whole.repeat(numWholes)}${half.repeat(numHalves)}${empty.repeat(numEmpty)} ${perctOfGoalCompleted.toFixed(1)}%`
 }
 
