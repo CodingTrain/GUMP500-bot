@@ -9,7 +9,7 @@ const { getStringProgressBar } = require("./responses");
 // Get environment variables from .env for Twitter/MongoDB creds
 dotenv.config();
 
-const mongoClient = new MongoClient(process.env.MONGO_CONNECTION_URI);
+const mongoClient = new MongoClient(process.env.MONGO_CONNECTION_URI, { useUnifiedTopology: true });
 let runnersDB;
 
 connectDB().catch(console.error);
