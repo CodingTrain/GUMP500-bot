@@ -13,7 +13,7 @@ Pull requests are welcome. For major changes, please open an issue to discuss wh
 
 1. Copy the env-sample file into a `.env` file
 2. Run `npm install`
-1. The project uses MongoDB as a database. To develop and test localy, you'll need one.
+1. The project uses MongoDB as a database. To develop and test locally, you'll need one.
    The easiest solution is to register a free account on [MongoDB](https://www.mongodb.com/) and start a free cloud server (M0 shared cluster).
    Once you've done that, all you need to do is change the `MONGO_CONNECTION_URI` variable in the `.env` file
 1. You need to have a Twitter API Key to be able to fetch the tweets with hashtag `#GUMP500` (if you want to test this functionality). In order to get this, you first need an [approved developer account](https://developer.twitter.com/en/portal/dashboard).
@@ -22,3 +22,4 @@ Pull requests are welcome. For major changes, please open an issue to discuss wh
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
+
